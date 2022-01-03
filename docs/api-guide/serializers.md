@@ -116,7 +116,7 @@ Calling `.save()` will either create a new instance, or update an existing insta
     # .save() will update the existing `comment` instance.
     serializer = CommentSerializer(comment, data=data)
 
-Both the `.create()` and `.update()` methods are optional. You can implement either neither, one, or both of them, depending on the use-case for your serializer class.
+Both the `.create()` and `.update()` methods are optional. You can implement either none, one, or both of them, depending on the use-case for your serializer class.
 
 #### Passing additional attributes to `.save()`
 
@@ -161,7 +161,7 @@ Each key in the dictionary will be the field name, and the values will be lists 
 
 When deserializing a list of items, errors will be returned as a list of dictionaries representing each of the deserialized items.
 
-#### Raising an exception on invalid data
+#### Raising an exception on invalid data
 
 The `.is_valid()` method takes an optional `raise_exception` flag that will cause it to raise a `serializers.ValidationError` exception if there are validation errors.
 
@@ -251,7 +251,7 @@ For more information see the [validators documentation](validators.md).
 
 When passing an initial object or queryset to a serializer instance, the object will be made available as `.instance`. If no initial object is passed then the `.instance` attribute will be `None`.
 
-When passing data to a serializer instance, the unmodified data will be made available as `.initial_data`. If the data keyword argument is not passed then the `.initial_data` attribute will not exist.
+When passing data to a serializer instance, the unmodified data will be made available as `.initial_data`. If the `data` keyword argument is not passed then the `.initial_data` attribute will not exist.
 
 ## Partial updates
 
@@ -282,7 +282,7 @@ If a nested representation may optionally accept the `None` value you should pas
         content = serializers.CharField(max_length=200)
         created = serializers.DateTimeField()
 
-Similarly if a nested representation should be a list of items, you should pass the `many=True` flag to the nested serialized.
+Similarly if a nested representation should be a list of items, you should pass the `many=True` flag to the nested serializer.
 
     class CommentSerializer(serializers.Serializer):
         user = UserSerializer(required=False)
@@ -524,6 +524,7 @@ You can add extra fields to a `ModelSerializer` or override the default fields b
 
         class Meta:
             model = Account
+            fields = ['url', 'groups']
 
 Extra fields can correspond to any property or callable on the model.
 
@@ -595,7 +596,7 @@ Normally if a `ModelSerializer` does not generate the fields you need by default
 
 ### `.serializer_field_mapping`
 
-A mapping of Django model classes to REST framework serializer classes. You can override this mapping to alter the default serializer classes that should be used for each model class.
+A mapping of Django model fields to REST framework serializer fields. You can override this mapping to alter the default serializer fields that should be used for each model field.
 
 ### `.serializer_related_field`
 
@@ -605,13 +606,13 @@ For `ModelSerializer` this defaults to `PrimaryKeyRelatedField`.
 
 For `HyperlinkedModelSerializer` this defaults to `serializers.HyperlinkedRelatedField`.
 
-### `serializer_url_field`
+### `.serializer_url_field`
 
 The serializer field class that should be used for any `url` field on the serializer.
 
 Defaults to `serializers.HyperlinkedIdentityField`
 
-### `serializer_choice_field`
+### `.serializer_choice_field`
 
 The serializer field class that should be used for any choice fields on the serializer.
 
@@ -754,6 +755,14 @@ The following argument can also be passed to a `ListSerializer` field or a seria
 ### `allow_empty`
 
 This is `True` by default, but can be set to `False` if you want to disallow empty lists as valid input.
+
+### `max_length`
+
+This is `None` by default, but can be set to a positive integer if you want to validates that the list contains no more than this number of elements.
+
+### `min_length`
+
+This is `None` by default, but can be set to a positive integer if you want to validates that the list contains no fewer than this number of elements.
 
 ### Customizing `ListSerializer` behavior
 
@@ -1087,7 +1096,7 @@ For example, if you wanted to be able to set which fields should be used by a se
             fields = kwargs.pop('fields', None)
 
             # Instantiate the superclass normally
-            super(DynamicFieldsModelSerializer, self).__init__(*args, **kwargs)
+            super().__init__(*args, **kwargs)
 
             if fields is not None:
                 # Drop any fields that are not specified in the `fields` argument.

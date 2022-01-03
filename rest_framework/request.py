@@ -143,9 +143,9 @@ class Request:
 
     Kwargs:
         - request(HttpRequest). The original request instance.
-        - parsers_classes(list/tuple). The parsers to use for parsing the
+        - parsers(list/tuple). The parsers to use for parsing the
           request content.
-        - authentication_classes(list/tuple). The authentications used to try
+        - authenticators(list/tuple). The authenticators used to try
           authenticating the request's user.
     """
 
@@ -316,7 +316,7 @@ class Request:
             'application/x-www-form-urlencoded',
             'multipart/form-data'
         )
-        return any([parser.media_type in form_media for parser in self.parsers])
+        return any(parser.media_type in form_media for parser in self.parsers)
 
     def _parse(self):
         """
