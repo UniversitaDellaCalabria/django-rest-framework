@@ -45,7 +45,7 @@ For more complex cases you might also want to override various methods on the vi
 
 For very simple cases you might want to pass through any class attributes using the `.as_view()` method.  For example, your URLconf might include something like the following entry:
 
-    url(r'^/users/', ListCreateAPIView.as_view(queryset=User.objects.all(), serializer_class=UserSerializer), name='user-list')
+    path('users/', ListCreateAPIView.as_view(queryset=User.objects.all(), serializer_class=UserSerializer), name='user-list')
 
 ---
 
@@ -95,6 +95,12 @@ For example:
     def get_queryset(self):
         user = self.request.user
         return user.accounts.all()
+
+---
+
+**Note:** If the serializer_class used in the generic view spans orm relations, leading to an n+1 problem, you could optimize your queryset in this method using `select_related` and `prefetch_related`. To get more information about n+1 problem and use cases of the mentioned methods refer to related section in [django documentation][django-docs-select-related].
+
+---
 
 #### `get_object(self)`
 
@@ -389,3 +395,4 @@ The following third party packages provide additional generic view implementatio
 [UpdateModelMixin]: #updatemodelmixin
 [DestroyModelMixin]: #destroymodelmixin
 [django-rest-multiple-models]: https://github.com/MattBroach/DjangoRestMultipleModels
+[django-docs-select-related]: https://docs.djangoproject.com/en/3.1/ref/models/querysets/#django.db.models.query.QuerySet.select_related
