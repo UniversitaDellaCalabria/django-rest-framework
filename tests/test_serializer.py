@@ -2,6 +2,7 @@ import inspect
 import pickle
 import re
 import sys
+import unittest
 from collections import ChainMap
 from collections.abc import Mapping
 
@@ -61,7 +62,7 @@ class TestFieldImports:
 # -----------------------------
 
 class TestSerializer:
-    def setup(self):
+    def setup_method(self):
         class ExampleSerializer(serializers.Serializer):
             char = serializers.CharField()
             integer = serializers.IntegerField()
@@ -240,7 +241,7 @@ class TestValidateMethod:
 
 
 class TestBaseSerializer:
-    def setup(self):
+    def setup_method(self):
         class ExampleSerializer(serializers.BaseSerializer):
             def to_representation(self, obj):
                 return {
@@ -337,7 +338,7 @@ class TestStarredSource:
         'nested2': {'c': 3, 'd': 4}
     }
 
-    def setup(self):
+    def setup_method(self):
         class NestedSerializer1(serializers.Serializer):
             a = serializers.IntegerField()
             b = serializers.IntegerField()
@@ -463,7 +464,7 @@ class TestNotRequiredOutput:
 
 
 class TestDefaultOutput:
-    def setup(self):
+    def setup_method(self):
         class ExampleSerializer(serializers.Serializer):
             has_default = serializers.CharField(default='x')
             has_default_callable = serializers.CharField(default=lambda: 'y')
@@ -584,7 +585,7 @@ class TestCacheSerializerData:
 
 
 class TestDefaultInclusions:
-    def setup(self):
+    def setup_method(self):
         class ExampleSerializer(serializers.Serializer):
             char = serializers.CharField(default='abc')
             integer = serializers.IntegerField()
@@ -612,7 +613,7 @@ class TestDefaultInclusions:
 
 
 class TestSerializerValidationWithCompiledRegexField:
-    def setup(self):
+    def setup_method(self):
         class ExampleSerializer(serializers.Serializer):
             name = serializers.RegexField(re.compile(r'\d'), required=True)
         self.Serializer = ExampleSerializer
@@ -641,7 +642,7 @@ class Test2555Regression:
 
 
 class Test4606Regression:
-    def setup(self):
+    def setup_method(self):
         class ExampleSerializer(serializers.Serializer):
             name = serializers.CharField(required=True)
             choices = serializers.CharField(required=True)
@@ -762,3 +763,84 @@ class Test8301Regression:
 
         assert (s.data | {}).__class__ == s.data.__class__
         assert ({} | s.data).__class__ == s.data.__class__
+
+
+class TestSetValueMethod:
+    # Serializer.set_value() modifies the first parameter in-place.
+
+    s = serializers.Serializer()
+
+    def test_no_keys(self):
+        ret = {'a': 1}
+        self.s.set_value(ret, [], {'b': 2})
+        assert ret == {'a': 1, 'b': 2}
+
+    def test_one_key(self):
+        ret = {'a': 1}
+        self.s.set_value(ret, ['x'], 2)
+        assert ret == {'a': 1, 'x': 2}
+
+    def test_nested_key(self):
+        ret = {'a': 1}
+        self.s.set_value(ret, ['x', 'y'], 2)
+        assert ret == {'a': 1, 'x': {'y': 2}}
+
+
+class MyClass(models.Model):
+    name = models.CharField(max_length=100)
+    value = models.CharField(max_length=100, blank=True)
+
+    app_label = "test"
+
+    @property
+    def is_valid(self):
+        return self.name == 'valid'
+
+
+class MyClassSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MyClass
+        fields = ('id', 'name', 'value')
+
+    def validate_value(self, value):
+        if value and not self.instance.is_valid:
+            raise serializers.ValidationError(
+                'Status cannot be set for invalid instance')
+        return value
+
+
+class TestMultipleObjectsValidation(unittest.TestCase):
+    def setUp(self):
+        self.objs = [
+            MyClass(name='valid'),
+            MyClass(name='invalid'),
+            MyClass(name='other'),
+        ]
+
+    def test_multiple_objects_are_validated_separately(self):
+
+        serializer = MyClassSerializer(
+            data=[{'value': 'set', 'id': instance.id} for instance in
+                  self.objs],
+            instance=self.objs,
+            many=True,
+            partial=True,
+        )
+
+        assert not serializer.is_valid()
+        assert serializer.errors == [
+            {},
+            {'value': ['Status cannot be set for invalid instance']},
+            {'value': ['Status cannot be set for invalid instance']}
+        ]
+
+    def test_exception_raised_when_data_and_instance_length_different(self):
+
+        with self.assertRaises(AssertionError):
+            MyClassSerializer(
+                data=[{'value': 'set', 'id': instance.id} for instance in
+                      self.objs],
+                instance=self.objs[:-1],
+                many=True,
+                partial=True,
+            )
