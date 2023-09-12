@@ -26,8 +26,7 @@ from . import openapi_agid  # noqa
 from .inspectors import DefaultSchema  # noqa
 
 # this would be configured in settings.REST_FRAMEWORK
-#  api_settings.defaults['DEFAULT_SCHEMA_CLASS'] = \
-    #  'rest_framework.schemas.openapi_agid.AgidAutoSchema'
+#  api_settings.defaults['DEFAULT_SCHEMA_CLASS'] = 'rest_framework.schemas.openapi_agid.AgidAutoSchema'
 
 
 def get_schema_view(
