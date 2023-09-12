@@ -20,7 +20,7 @@ Validation in Django REST framework serializers is handled a little differently 
 With `ModelForm` the validation is performed partially on the form, and partially on the model instance. With REST framework the validation is performed entirely on the serializer class. This is advantageous for the following reasons:
 
 * It introduces a proper separation of concerns, making your code behavior more obvious.
-* It is easy to switch between using shortcut `ModelSerializer` classes and using  explicit `Serializer` classes. Any validation behavior being used for `ModelSerializer` is simple to replicate.
+* It is easy to switch between using shortcut `ModelSerializer` classes and using explicit `Serializer` classes. Any validation behavior being used for `ModelSerializer` is simple to replicate.
 * Printing the `repr` of a serializer instance will show you exactly what validation rules it applies. There's no extra hidden validation behavior being called on the model instance.
 
 When you're using `ModelSerializer` all of this is handled automatically for you. If you want to drop down to using `Serializer` classes instead, then you need to define the validation rules explicitly.
@@ -53,7 +53,7 @@ If we open up the Django shell using `manage.py shell` we can now
 
 The interesting bit here is the `reference` field. We can see that the uniqueness constraint is being explicitly enforced by a validator on the serializer field.
 
-Because of this more explicit style REST framework includes a few validator classes that are not available in core Django. These classes are detailed below.
+Because of this more explicit style REST framework includes a few validator classes that are not available in core Django. These classes are detailed below.  REST framework validators, like their Django counterparts, implement the `__eq__` method, allowing you to compare instances for equality.
 
 ---
 
@@ -164,6 +164,12 @@ If you want the date field to be entirely hidden from the user, then use `Hidden
 
 ---
 
+---
+
+**Note:** `HiddenField()` does not appear in `partial=True` serializer (when making `PATCH` request). This behavior might change in future, follow updates on [github discussion](https://github.com/encode/django-rest-framework/discussions/8259). 
+
+---
+
 # Advanced field defaults
 
 Validators that are applied across multiple fields in the serializer can sometimes require a field input that should not be provided by the API client, but that *is* available as input to the validator.
@@ -208,7 +214,7 @@ by specifying an empty list for the serializer `Meta.validators` attribute.
 
 By default "unique together" validation enforces that all fields be
 `required=True`. In some cases, you might want to explicit apply
-`required=False` to one of the fields, in which case the desired behaviour
+`required=False` to one of the fields, in which case the desired behavior
 of the validation is ambiguous.
 
 In this case you will typically need to exclude the validator from the
@@ -295,13 +301,14 @@ To write a class-based validator, use the `__call__` method. Class-based validat
 
 In some advanced cases you might want a validator to be passed the serializer
 field it is being used with as additional context. You can do so by setting
-a `requires_context = True` attribute on the validator. The `__call__` method
+a `requires_context = True` attribute on the validator class. The `__call__` method
 will then be called with the `serializer_field`
 or `serializer` as an additional argument.
 
-    requires_context = True
+    class MultipleOf:
+        requires_context = True
 
-    def __call__(self, value, serializer_field):
-        ...
+        def __call__(self, value, serializer_field):
+            ...
 
 [cite]: https://docs.djangoproject.com/en/stable/ref/validators/
